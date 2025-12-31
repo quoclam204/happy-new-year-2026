@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chúc Mừng Năm Mới 2026</title>
+
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            /* Đảm bảo bạn có file ảnh tên là background-Tet-nguyen-dan.jpg cùng thư mục */
+            background: url("background-Tet-nguyen-dan.jpg") no-repeat center center fixed;
+            background-size: cover;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+            cursor: crosshair;
+        }
+
+        canvas {
+            display: block;
+        }
+
+        .content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            z-index: 10;
+            pointer-events: none;
+            user-select: none;
+        }
+
+        h1 {
+            color: #fff;
+            font-size: 5rem;
+            letter-spacing: 5px;
+            text-shadow:
+                0 0 10px #ff00de,
+                0 0 30px #ff00de,
+                0 0 60px #ff00de;
+            animation: glow 1.5s infinite alternate;
+        }
+
+        h2 {
+            color: #ffd700;
+            font-size: 8rem;
+            margin: 0;
+            text-shadow:
+                0 0 10px #ffd700,
+                0 0 30px #ffd700;
+        }
+
+        p {
+            color: #eee;
+            font-size: 1.5rem;
+            margin-top: 20px;
+        }
+
+        @keyframes glow {
+            from {
+                text-shadow:
+                    0 0 10px #fff,
+                    0 0 20px #ff00de;
+            }
+
+            to {
+                text-shadow:
+                    0 0 20px #fff,
+                    0 0 40px #ff4da6,
+                    0 0 80px #ff4da6;
+            }
+        }
+
+        /* Nút nhạc */
+        #music-btn {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            z-index: 20;
+            padding: 12px 18px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            border: 1px solid #fff;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 14px;
+            backdrop-filter: blur(5px);
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2.5rem;
+            }
+
+            h2 {
+                font-size: 4rem;
+            }
+
+            p {
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="content">
+        <h1>Happy New Year</h1>
+        <h2>2026</h2>
+        <p>Chúc bạn một năm mới An Khang – Thịnh Vượng 🎉</p>
+    </div>
+
+    <canvas id="canvas"></canvas>
+
+    <button id="music-btn">🔊 Bật nhạc</button>
+
+    <audio id="bg-music" loop>
+        <source src="nucuoixuan.mp3" type="audio/mpeg">
+    </audio>
+
+    <script>
+        const canvas = document.getElementById("canvas");
+        const ctx = canvas.getContext("2d");
+
+        let cw = window.innerWidth;
+        let ch = window.innerHeight;
+
+        canvas.width = cw;
+        canvas.height = ch;
+
+        let fireworks = [];
+        let particles = [];
+        let hue = 0;
+
+        function random(min, max) {
+            return Math.random() * (max - min) + min;
+        }
+
+        function distance(x1, y1, x2, y2) {
+            return Math.hypot(x2 - x1, y2 - y1);
+        }
+
+        /* ==== PHÁO BAY ==== */
+        function Firework(sx, sy, tx, ty) {
+            this.x = sx;
+            this.y = sy;
+            this.sx = sx;
+            this.sy = sy;
+            this.tx = tx;
+            this.ty = ty;
+            this.distance = distance(sx, sy, tx, ty);
+            this.traveled = 0;
+            this.angle = Math.atan2(ty - sy, tx - sx);
+            this.speed = random(4, 6);   // chậm hơn
+            this.acceleration = 1.04;   // tăng tốc nhẹ hơn
+            this.brightness = random(60, 80);
+            this.trail = [];
+            this.trailLength = 8;               // ✨ đuôi pháo
+        }
+
+        Firework.prototype.update = function (i) {
+            this.trail.push({ x: this.x, y: this.y });
+            if (this.trail.length > this.trailLength) this.trail.shift();
+
+            this.speed *= this.acceleration;
+            const vx = Math.cos(this.angle) * this.speed;
+            const vy = Math.sin(this.angle) * this.speed;
+            this.traveled = distance(this.sx, this.sy, this.x + vx, this.y + vy);
+
+            if (this.traveled >= this.distance) {
+                createParticles(this.tx, this.ty);
+                fireworks.splice(i, 1);
+            } else {
+                this.x += vx;
+                this.y += vy;
+            }
+        };
+
+        Firework.prototype.draw = function () {
+            ctx.beginPath();
+            ctx.moveTo(this.trail[0]?.x || this.x, this.trail[0]?.y || this.y);
+            ctx.lineTo(this.x, this.y);
+            ctx.strokeStyle = `hsl(${hue},100%,${this.brightness}%)`;
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        };
+
+        /* ==== HẠT PHÁO ==== */
+        function Particle(x, y) {
+            this.x = x;
+            this.y = y;
+            this.angle = random(0, Math.PI * 2);
+            this.speed = random(3, 12);
+
+            // 🔥 CHỈNH CHỖ NÀY
+            this.friction = 0.96;                     // mượt hơn
+            this.gravity = random(0.4, 0.7);          // rơi tự nhiên
+            this.decay = random(0.006, 0.012);        // tắt chậm, không đều
+            this.size = random(1.5, 3.5);             // hạt không quá to
+
+            this.hue = hue + random(-20, 20);
+            this.alpha = 1;
+        }
+
+
+        Particle.prototype.update = function (i) {
+            this.speed *= this.friction;
+            this.x += Math.cos(this.angle) * this.speed;
+            this.y += Math.sin(this.angle) * this.speed + this.gravity;
+            this.alpha -= this.decay;
+
+            if (this.alpha <= 0) particles.splice(i, 1);
+        };
+
+        Particle.prototype.draw = function () {
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+            ctx.fillStyle = `hsla(${this.hue},100%,50%,${this.alpha})`;
+            ctx.fill();
+        };
+
+        function createParticles(x, y) {
+            for (let i = 0; i < 80; i++) {        // 🎆 nổ to hơn (80 hạt)
+                particles.push(new Particle(x, y));
+            }
+        }
+
+        /* ==== LOOP ==== */
+        function loop() {
+            requestAnimationFrame(loop);
+
+            ctx.globalCompositeOperation = "destination-out";
+            ctx.fillStyle = "rgba(0,0,0,0.3)";
+            ctx.fillRect(0, 0, cw, ch);
+            ctx.globalCompositeOperation = "lighter";
+
+            fireworks.forEach((f, i) => {
+                f.draw();
+                f.update(i);
+            });
+
+            particles.forEach((p, i) => {
+                p.draw();
+                p.update(i);
+            });
+
+            if (Math.random() < 0.04) {
+                hue = random(0, 360);
+                fireworks.push(
+                    new Firework(cw / 2, ch, random(0, cw), random(0, ch / 2))
+                );
+            }
+        }
+
+        canvas.addEventListener("click", e => {
+            hue = random(0, 360);
+            fireworks.push(new Firework(cw / 2, ch, e.clientX, e.clientY));
+        });
+
+        window.addEventListener("resize", () => {
+            cw = canvas.width = window.innerWidth;
+            ch = canvas.height = window.innerHeight;
+        });
+
+        loop();
+
+        /* ==== NHẠC ==== */
+        const music = document.getElementById("bg-music");
+        const btn = document.getElementById("music-btn");
+
+        btn.onclick = () => {
+            if (music.paused) {
+                music.volume = 0.5;
+                music.play();
+                btn.innerText = "🔈 Tắt nhạc";
+            } else {
+                music.pause();
+                btn.innerText = "🔊 Bật nhạc";
+            }
+        };
+    </script>
+
+
+</body>
+
+</html>
